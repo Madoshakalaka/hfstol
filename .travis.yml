@@ -2,7 +2,9 @@ language: python
 dist: xenial
 install: pip install -e .
 script:
-- pytest
+- mypy -p hfstol
+- py.test
+after_success: codecov
 stages:
 - test
 - deploy
@@ -14,10 +16,11 @@ jobs:
   - stage: deploy
     install: ''
     script: ''
+    after_success: ''
     deploy:
       provider: pypi
       user: Madoshakalaka
       password:
-        #secure: encrypted password
+        secure: qnUsXdafuyWEVUeAJe9ps0NIH+Ep8Yfwp+TCClNUY/ufAu4Sdyeim7/kU6zpcY2P8hkNC1LxJ8o59Dpnu4zE403sVLIquku4JaaHHn3C8jmYlAM3thLiVyvCS1bFcr57eo6t4mreVJMZd35RZyDNLl+zzWalTxsh0g/e5dmqnSzevQ6NUc2S5sLQJXd2rG4vE+gLOwVXzOhm6AOaYh/0xEkDyYgZn4uWHi8EaK1CzNLFQ0uTXeigO9LhtZ5atveN3SAfckiUFz7eu3uj0b/4nsfZhTUXqBXIvc9xYxRGsz7rHODluTSCKf3giEoaQqLUdSr8RuWzBJNYYUcngrsI7fueae6170Hv3q3/TF8ZLX7en81KRwARqhLNA0bnOk8cDJzGtwNI3rPiFZA7BgUrLo3dGCcvtwPhLqOxe0Ixv322qHGfKiwPJzAH3PZnrpIbMeJIZxV83WdumCPW1goVhuHQ9zoEid3tNxjXY17Lo4s5M0gmKSgGj+fHGqIJNvzwsACkLZDYb98fU6/mHs6eWr95AhQjD4ofXG2s5uWApj8WC6EZHSpt1ZxNmGPFjVrUjahoZIbYLOSY57pBraRKq0SJ666LSQmakgexPvMb1c1tKU2co3FjvFxWAAQJ3Ueh/Xs6mdh3z2zxKxxMU4PQeVp6Cc7hEAJe8ngBEm297Eg=
       on:
         tags: true

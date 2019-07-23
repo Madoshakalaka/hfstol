@@ -1,5 +1,6 @@
 # hfstol
 ![travis-badge](https://travis-ci.org/Madoshakalaka/hfstol.svg?branch=master)
+![code-cov](https://codecov.io/gh/eddieantonio/fst-lookup)
 
 hfst-optimized-lookup in python
 
@@ -74,7 +75,7 @@ def from_file(cls, filename: Union[str, pathlib.Path]):
 
 # HFSTOL.feed
 
-def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str], ...]:
+def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str, ...], ...]:
     """
     feed surface form to hfst
 
@@ -97,7 +98,7 @@ def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str], ...]
     
 # HFSTOL.feed_in_bulk   
 
-def feed_in_bulk(self, surface_forms: List[str], concat=True) -> Dict[str, Set[Tuple[str]]]:
+def feed_in_bulk(self, surface_forms: List[str], concat=True) -> Dict[str, Set[Tuple[str, ...]]]:
     """
     feed a multiple of surface forms to hfst at once
 
@@ -108,7 +109,7 @@ def feed_in_bulk(self, surface_forms: List[str], concat=True) -> Dict[str, Set[T
 
 # HFSTOL.feed_in_bulk_fast
 
-def feed_in_bulk_fast(self, strings) -> Dict[str, List[str]]:
+def feed_in_bulk_fast(self, strings) -> Dict[str, Set[str]]:
     """
     calls `hfstol-optimized-lookup`. Evaluation is magnitudes faster. Note the generated deep forms will be all concatenated. 
     e.g. instead of ['n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'] it returns ['niska+N+A+Pl']

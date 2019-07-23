@@ -25,7 +25,7 @@ class HFSTOL:
         self._hfstol_exe_path = shutil.which("hfst-optimized-lookup")
         self._hfstol_file_path = hfstol_file_path
 
-    def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str], ...]:
+    def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str, ...], ...]:
         """
         feed surface form to hfst
 
@@ -54,19 +54,19 @@ class HFSTOL:
         else:
             return tuple()
 
-    def feed_in_bulk(self, surface_forms: Iterable[str], concat=True) -> Dict[str, Set[Tuple[str]]]:
+    def feed_in_bulk(self, surface_forms: Iterable[str], concat=True) -> Dict[str, Set[Tuple[str, ...]]]:
         """
         feed a multiple of surface forms to hfst at once
 
         :param surface_forms:
         :return: a dictionary with keys being each surface form fed in, values being their corresponding deep forms
         """
-        res = {string: set() for string in surface_forms}
+        res = {string: set() for string in surface_forms} # type: Dict[str, Set[Tuple[str,...]]]
         for string in surface_forms:
             res[string] |= set(tuple(self.feed(string, concat)))
         return res
 
-    def feed_in_bulk_fast(self, strings: Iterable[str]) -> Dict[str, List[str]]:
+    def feed_in_bulk_fast(self, strings: Iterable[str]) -> Dict[str, Set[str]]:
         """
         calls `hfstol-optimized-lookup`. Evaluation is magnitudes faster. Note the generated symbols will all be all concatenated.
         e.g. instead of ['n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'] it returns ['niska+N+A+Pl']
@@ -100,7 +100,7 @@ class HFSTOL:
         handle.close()
         return cls(header, alphabet, transducer, filename)
 
-    def _call_hfstol(self, inputs: Iterable[str]) -> Dict[str, List[str]]:
+    def _call_hfstol(self, inputs: Iterable[str]) -> Dict[str, Set[str]]:
         """
         call hfstol and return concatenated results
         """
@@ -121,7 +121,7 @@ class HFSTOL:
             shell=False,
         )
 
-        results = {original: set() for original in inputs}
+        results = {original: set() for original in inputs} # type: Dict[str, Set[str]]
 
         for line in status.stdout.decode("UTF-8").splitlines():
             # Remove extraneous whitespace.
@@ -190,7 +190,7 @@ def cmd():
             pass
 
 
-def concat_res(i) -> Tuple[str]:
+def concat_res(i) -> Tuple[str, ...]:
     res = []  # type: List[str]
     buffer = ''
 
