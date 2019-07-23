@@ -88,7 +88,7 @@ class HFSTOL:
         :param filename: the `.hfstol` file
         :return: an `HFSTOL` instance, which you can use to convert surface forms to deep forms
         """
-        handle = open(filename, "rb")
+        handle = open(str(filename), "rb")
         header = Header(handle)
         alphabet = Alphabet(handle, header.number_of_symbols)
         if header.weighted:
