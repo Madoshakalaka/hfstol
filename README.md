@@ -54,7 +54,7 @@ hfst.feed_in_bulk_fast(["niska+N+A+Pl", 'nipâw+V+AI+Ind+Prs+12Pl'])
 # {'niska+N+A+Pl': {'niskak'}, 'nipâw+V+AI+Ind+Prs+12Pl': {'kinipânânaw', 'kinipânaw'}}
 ```
 
-to see a comprehensive API behaviour including all edge cases, see todo
+to see a comprehensive API behaviour including edge cases, see [this test file](https://github.com/Madoshakalaka/hfstol/blob/master/tests/test_apply.py) (what if I `feed('absolute garbage')`)
 
 # API signatures
 
