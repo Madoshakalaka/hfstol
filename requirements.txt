@@ -1,0 +1,7 @@
+# dev requirements
+
+pytest
+pytest-datadir
+wheel
+twine
+pytest-cov
