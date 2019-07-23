@@ -1,9 +1,12 @@
+from typing import List, Any
+
 from .constants import *
 from .shared import match, Indexlist, LetterTrie, FlagDiacriticStateStack
 import struct
 
 
 class Transducer:
+
     class TransitionIndex:
 
         def __init__(self, input_symbol, transition):
@@ -77,7 +80,7 @@ class Transducer:
         self.displayVector = []
         self.outputString = Indexlist()
         self.inputString = Indexlist()
-        self.output_list = []
+        self.output_list = [] # type: List[str]
 
     def tryEpsilonIndices(self, index):
         if self.indices[index].inputSymbol == 0:

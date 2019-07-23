@@ -4,12 +4,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Union, List, Iterable
+
+from typing import List, Iterable, Dict, Set, Tuple, Union
 
 from hfstol.shared import Header, Alphabet
 from hfstol.transducer import Transducer
 
-PathLike = Union[str, Path]  # stupid python 3.5
+PathLike = Union[Path, str]  # python 3.5 compatibility
 
 
 class HFSTOL:
@@ -24,29 +25,51 @@ class HFSTOL:
         self._hfstol_exe_path = shutil.which("hfst-optimized-lookup")
         self._hfstol_file_path = hfstol_file_path
 
-    def analyze(self, string) -> List[List[str]]:
+    def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str], ...]:
         """
-        Take string to analyse
+        feed surface form to hfst
+
+        :param surface_form: the surface form
+        :param concat: whether to concatenate single characters
+
+            example output for `surface_form` = 'niskak', with `crk-descriptive-analyzer.hfstol`
+            - True: (('niska', '+N', '+A', '+Pl'), ('nîskâw', '+V', '+II', '+II', '+Cnj', '+Prs', '+3Sg'))
+            - False: (('n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'), ('n', 'î', 's', 'k', 'â', 'w', '+V', '+II', '+II', '+Cnj', '+Prs', '+3Sg'))
+
+            example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol`
+            - True: (('niskak',),)
+            - False: (('n', 'i', 's', 'k', 'a', 'k'),)
+
+            example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol` (an inflection that has two spellings)
+            - True: (('kinipânaw',), ('kinipânânaw',))
+            -False: (('k', 'i', 'n', 'i', 'p', 'â', 'n', 'a', 'w'), ('k', 'i', 'n', 'i', 'p', 'â', 'n', 'â', 'n', 'a', 'w'))
         """
-        if self._transducer.analyze(string):
-            return self._transducer.output_list
+        if surface_form == '':
+            return tuple()
+        if self._transducer.analyze(surface_form):
+            if concat:
+                return tuple(concat_res(i) for i in self._transducer.output_list)
+            else:
+                return tuple(tuple(i) for i in self._transducer.output_list)
         else:
-            return []
+            return tuple()
 
-    def analyze_in_bulk(self, strings) -> List[List[List[str]]]:
+    def feed_in_bulk(self, surface_forms: Iterable[str], concat=True) -> Dict[str, Set[Tuple[str]]]:
         """
+        feed a multiple of surface forms to hfst at once
 
-        :param strings:
-        :return:
+        :param surface_forms:
+        :return: a dictionary with keys being each surface form fed in, values being their corresponding deep forms
         """
-        res = []
-        for string in strings:
-            res.append(self.analyze(string))
+        res = {string: set() for string in surface_forms}
+        for string in surface_forms:
+            res[string] |= set(tuple(self.feed(string, concat)))
         return res
 
-    def analyze_in_bulk_fast(self, strings) -> List[List[str]]:
+    def feed_in_bulk_fast(self, strings: Iterable[str]) -> Dict[str, List[str]]:
         """
-        returns the concatenated version, e.g. instead of ['n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'] it returns ['niska+N+A+Pl']
+        calls `hfstol-optimized-lookup`. Evaluation is magnitudes faster. Note the generated symbols will all be all concatenated.
+        e.g. instead of ['n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'] it returns ['niska+N+A+Pl']
         """
 
         if self._hfstol_exe_path is None:
@@ -61,6 +84,10 @@ class HFSTOL:
 
     @classmethod
     def from_file(cls, filename: PathLike):
+        """
+        :param filename: the `.hfstol` file
+        :return: an `HFSTOL` instance, which you can use to convert surface forms to deep forms
+        """
         handle = open(filename, "rb")
         header = Header(handle)
         alphabet = Alphabet(handle, header.number_of_symbols)
@@ -73,7 +100,7 @@ class HFSTOL:
         handle.close()
         return cls(header, alphabet, transducer, filename)
 
-    def _call_hfstol(self, inputs: Iterable[str]) -> List[List[str]]:
+    def _call_hfstol(self, inputs: Iterable[str]) -> Dict[str, List[str]]:
         """
         call hfstol and return concatenated results
         """
@@ -96,14 +123,12 @@ class HFSTOL:
 
         results = {original: set() for original in inputs}
 
-        res_buffer = []  # type: List[str]
         for line in status.stdout.decode("UTF-8").splitlines():
             # Remove extraneous whitespace.
             line = line.strip()
             # Skip empty lines.
             if not line:
                 continue
-
             # Each line will be in this form:
             #    <original_input>\t<res>
             # e.g. in the case of analyzer file
@@ -116,7 +141,7 @@ class HFSTOL:
             original_input, res, *rest = line.split("\t")
 
             if '+?' not in rest and '+?' not in res:
-                results[original_input].add(tuple(res_buffer))
+                results[original_input].add(res)
 
         # yield tuple(res_buffer)
 
@@ -164,6 +189,25 @@ def cmd():
             # tokenization failed
             pass
 
+
+def concat_res(i) -> Tuple[str]:
+    res = []  # type: List[str]
+    buffer = ''
+
+    encountered = False
+    for symbol in i:
+        # print(symbol)
+        if len(symbol) == 1:
+            encountered = True
+            buffer += symbol
+        else:
+            if encountered:
+                res.append(buffer)
+                encountered = False
+            res.append(symbol)
+    if encountered:
+        res.append(buffer)
+    return tuple(res)
 
 if __name__ == "__main__":
     # just to provide a way to test the cmd entry point

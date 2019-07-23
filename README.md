@@ -3,42 +3,125 @@
 
 hfst-optimized-lookup in python
 
-## Showcase
-
-<!--You picture won't show on pypi if you use relative path.-->
-<!--If you want to add any image, please add the image to readme_assets folder and add the filename as below-->
-<!--![some show case picture](https://raw.githubusercontent.com/Madoshakalaka/hfstol/master/readme_assets/showcasePicture.png)-->
-
-
-## How to Use
-
 
 `pip install hfstol`
 
-<!--
+All below examples are based on two `.hfstol` files
 
-add some help here 
+respectively: [crk-descriptive-analyzer.hfstol crk-normative-generator.hfstol](https://github.com/UAlbertaALTLab/plains-cree-fsts/releases)
+
+
+# Use
+
+example with `crk-descriptive-analyzer.hfstol` :
 
 ```python
+from hfstol import HFSTOL
+
+hfst = HFSTOL.from_file('crk-descriptive-analyzer.hfstol')
+
+hfst.feed('niska')
+# returns: 
+# (('niska', '+N', '+A', '+Sg'), ('niska', '+N', '+A', '+Obv'))
+
+hfst.feed_in_bulk(['niska', 'kinipânânaw'])
+# returns: 
+# {'niska': {('niska', '+N', '+A', '+Obv'), ('niska', '+N', '+A', '+Sg')}, 'kinipânânaw': {('nipâw', '+V', '+AI', '+Ind', '+Prs', '+12Pl')}}
+
+hfst.feed_in_bulk_fast(['niska', 'kinipânânaw'])
+# returns:
+# {'niska': {'niska+N+A+Obv', 'niska+N+A+Sg'}, 'kinipânânaw': {'nipâw+V+AI+Ind+Prs+12Pl'}}
 
 ```
 
--->
+example with `crk-normative-generator.hfstol` :
+
+```python
+from hfstol import HFSTOL
+
+hfst = HFSTOL.from_file('crk-normative-generator.hfstol')
+
+hfst.feed('niska+N+A+Pl')
+# returns: 
+# (('niskak',),)
+
+hfst.feed_in_bulk(["niska+N+A+Pl", 'nipâw+V+AI+Ind+Prs+12Pl'])
+# returns: 
+# {'niska+N+A+Pl': {('niskak',)}, 'nipâw+V+AI+Ind+Prs+12Pl': {('kinipânânaw',), ('kinipânaw',)}}
+
+hfst.feed_in_bulk_fast(["niska+N+A+Pl", 'nipâw+V+AI+Ind+Prs+12Pl'])
+# returns:
+# {'niska+N+A+Pl': {'niskak'}, 'nipâw+V+AI+Ind+Prs+12Pl': {'kinipânânaw', 'kinipânaw'}}
+```
+
+to see a comprehensive API behaviour including all edge cases, see todo
+
+# API signatures
 
 
+```python
 
-Pip creates command line executable entry point by default
+# HFSTOL.from_file
 
-You should be able to run shell command `$hfstol` anywhere.
+@classmethod
+def from_file(cls, filename: Union[str, pathlib.Path]): 
+    """
+    :param filename: the `.hfstol` file
+    :return: an `HFSTOL` instance, which you can use to convert surface forms to deep forms
+    """
+    pass
 
-<!--
-add some command help here
+
+# HFSTOL.feed
+
+def feed(self, surface_form: str, concat: bool = True) -> Tuple[Tuple[str], ...]:
+    """
+    feed surface form to hfst
+
+    :param surface_form: the surface form
+    :param concat: whether to concatenate single characters
+
+        example output for `surface_form` = 'niskak', with `crk-descriptive-analyzer.hfstol`
+        - True: (('niska', '+N', '+A', '+Pl'), ('nîskâw', '+V', '+II', '+II', '+Cnj', '+Prs', '+3Sg'))
+        - False: (('n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'), ('n', 'î', 's', 'k', 'â', 'w', '+V', '+II', '+II', '+Cnj', '+Prs', '+3Sg'))
+
+        example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol`
+        - True: (('niskak',),)
+        - False: (('n', 'i', 's', 'k', 'a', 'k'),)
+
+        example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol` (an inflection that has two spellings)
+        - True: (('kinipânaw',), ('kinipânânaw',))
+        -False: (('k', 'i', 'n', 'i', 'p', 'â', 'n', 'a', 'w'), ('k', 'i', 'n', 'i', 'p', 'â', 'n', 'â', 'n', 'a', 'w'))
+    """
+    pass
+    
+# HFSTOL.feed_in_bulk   
+
+def feed_in_bulk(self, surface_forms: List[str], concat=True) -> Dict[str, Set[Tuple[str]]]:
+    """
+    feed a multiple of surface forms to hfst at once
+
+    :param surface_forms:
+    :return: a dictionary with keys being each surface form fed in, values being their corresponding deep forms
+    """
+    pass
+
+# HFSTOL.feed_in_bulk_fast
+
+def feed_in_bulk_fast(self, strings) -> Dict[str, List[str]]:
+    """
+    calls `hfstol-optimized-lookup`. Evaluation is magnitudes faster. Note the generated deep forms will be all concatenated. 
+    e.g. instead of ['n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'] it returns ['niska+N+A+Pl']
+    """
+    pass
+
+```
 
 
-- `$ hfstol -i filename`
-    - output: `hello world`
+# To Use `feed_in_bulk_fast`
 
--->
+`feed_in_bulk_fast` calls compiled C code, which can be 100 times faster than `feed_in_bulk`. 
 
-- `$ hfstol -h` for more help
+It requires `hfst-optimized-lookup` installed. Version 1.2 is tested to work. For linux system, installing can be as easy as `sudo apt get install hfst`. For other systems see [installation guide](https://github.com/hfst/hfst#installation)
 
+If `hfst-optimized-lookup` is not found, calling `feed_in_bulk_fast` throws `ImportError`
