@@ -123,6 +123,6 @@ def feed_in_bulk_fast(self, strings) -> Dict[str, Set[str]]:
 
 `feed_in_bulk_fast` calls compiled C code, which can be 100 times faster than `feed_in_bulk`. 
 
-It requires `hfst-optimized-lookup` installed. Version 1.2 is tested to work. For linux system, installing can be as easy as `sudo apt get install hfst`. For other systems see [installation guide](https://github.com/hfst/hfst#installation)
+It requires `hfst-optimized-lookup` installed. Version 1.2 is tested to work. For linux system, installing can be as easy as `sudo apt install hfst`. For other systems see [installation guide](https://github.com/hfst/hfst#installation)
 
 If `hfst-optimized-lookup` is not found, calling `feed_in_bulk_fast` throws `ImportError`
