@@ -42,7 +42,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version="1.0.1",  # Required
+    version="1.1.0",  # Required
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -105,7 +105,6 @@ setup(
     #
     # Note that this is a string of words separated by whitespace, not a list.
     # keywords="computer vision",  # Optional
-
     # You can just specify package directories manually here if your project is
     # simple. Or you can use find_packages().
     #

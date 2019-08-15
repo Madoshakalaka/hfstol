@@ -50,7 +50,7 @@ hfst.feed_in_bulk(["niska+N+A+Pl", 'nipâw+V+AI+Ind+Prs+12Pl'])
 # returns: 
 # {'niska+N+A+Pl': {('niskak',)}, 'nipâw+V+AI+Ind+Prs+12Pl': {('kinipânânaw',), ('kinipânaw',)}}
 
-hfst.feed_in_bulk_fast(["niska+N+A+Pl", 'nipâw+V+AI+Ind+Prs+12Pl'])
+hfst.feed_in_bulk_fast(["niska+N+A+Pl", 'nipâw+V+AI+Ind+Prs+12Pl'], multi_process=4)
 # returns:
 # {'niska+N+A+Pl': {'niskak'}, 'nipâw+V+AI+Ind+Prs+12Pl': {'kinipânânaw', 'kinipânaw'}}
 ```
@@ -109,12 +109,13 @@ def feed_in_bulk(self, surface_forms: List[str], concat=True) -> Dict[str, Set[T
 
 # HFSTOL.feed_in_bulk_fast
 
-def feed_in_bulk_fast(self, strings) -> Dict[str, Set[str]]:
+def feed_in_bulk_fast(self, strings: Iterable[str], multi_process: int = 1) -> Dict[str, Set[str]]:
     """
-    calls `hfstol-optimized-lookup`. Evaluation is magnitudes faster. Note the generated deep forms will be all concatenated. 
+    calls `hfstol-optimized-lookup`. Evaluation is magnitudes faster. Note the generated symbols will all be all concatenated.
     e.g. instead of ['n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'] it returns ['niska+N+A+Pl']
+
+    :keyword multi_process: Defaults to 1. Specify how many parallel processes you want to speed up computation. A rule is to have processes at most your machine core count.
     """
-    pass
 
 ```
 
