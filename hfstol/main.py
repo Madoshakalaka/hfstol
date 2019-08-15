@@ -147,10 +147,10 @@ class HFSTOL:
         message_queue = queue.Queue()  # type: queue.Queue
 
         for i, proc in enumerate(procs):
-            proc.stdin.write(lines_per_process[i])
 
             threading.Thread(
-                target=lambda p: message_queue.put(p.communicate()), args=(proc,)
+                target=lambda p: message_queue.put(p.communicate(lines_per_process[i])),
+                args=(proc,),
             ).start()
 
         returned_process_count = 0
