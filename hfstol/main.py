@@ -8,7 +8,7 @@ import sys
 import threading
 from pathlib import Path
 
-from typing import List, Iterable, Dict, Set, Tuple, Union
+from typing import List, Iterable, Dict, Set, Tuple, Union, Sized, Collection
 
 from hfstol.shared import Header, Alphabet
 from hfstol.transducer import Transducer
@@ -93,7 +93,7 @@ class HFSTOL:
                 "See: https://github.com/hfst/hfst#installation"
             )
 
-        return self._call_hfstol(strings, multi_process)
+        return self._call_hfstol(list(strings), multi_process)
 
     @classmethod
     def from_file(cls, filename: PathLike):
@@ -114,7 +114,7 @@ class HFSTOL:
         return cls(header, alphabet, transducer, filename)
 
     def _call_hfstol(
-        self, inputs: Iterable[str], multi_process: int
+        self, inputs: List[str], multi_process: int
     ) -> Dict[str, Set[str]]:
         """
         call hfstol and return concatenated results
@@ -146,7 +146,7 @@ class HFSTOL:
             for _ in range(multi_process)
         ]
 
-        message_queue = queue.Queue()
+        message_queue = queue.Queue()  # type: queue.Queue
 
         for i, proc in enumerate(procs):
             proc.stdin.write(lines_per_process[i])
