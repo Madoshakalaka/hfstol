@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-import io
 import queue
 import shutil
 import subprocess
 import sys
 import threading
 from pathlib import Path
-
-from typing import List, Iterable, Dict, Set, Tuple, Union, Sized, Collection
+from typing import List, Iterable, Dict, Set, Tuple, Union
 
 from hfstol.shared import Header, Alphabet
 from hfstol.transducer import Transducer
