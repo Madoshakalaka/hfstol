@@ -229,3 +229,4 @@ def test_multiple_generation_split(cree_generator, surface_forms, result):
 )
 def test_multiple_generation_fast(cree_generator, surface_forms, result):
     assert cree_generator.feed_in_bulk_fast(surface_forms) == result
+    assert cree_generator.feed_in_bulk_fast(surface_forms, multi_process=2) == result
