@@ -26,7 +26,7 @@ class HFSTOL:
         self._hfstol_exe_path = shutil.which("hfst-optimized-lookup")
         self._hfstol_file_path = hfstol_file_path
 
-        self._hfstol_processes = []
+        self._hfstol_processes = []  # type: List[subprocess.Popen]
 
     def feed(
         self, surface_form: str, concat: bool = True
@@ -111,6 +111,10 @@ class HFSTOL:
             self._hfstol_processes.append(proc)
 
         return self._call_hfstol(list(strings), multi_process)
+
+    def __del__(self):
+        for proc in self._hfstol_processes:
+            proc.terminate()
 
     @classmethod
     def from_file(cls, filename: PathLike):
