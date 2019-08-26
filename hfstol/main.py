@@ -105,7 +105,7 @@ class HFSTOL:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 shell=False,
-                encoding="utf-8",
+                universal_newlines=True,
                 bufsize=0,
             )
             self._hfstol_processes.append(proc)
