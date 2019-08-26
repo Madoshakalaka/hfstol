@@ -9,10 +9,7 @@ pytest-datadir = "~=1.3"
 pytest-cov = "~=2.7"
 codecov = "~=2.0"
 pytest-mypy = "~=0.4"
-black = "==19.3b0"
 hfstol = {editable = true,path = "."}
+black = {markers = "python_version>'3.5'",version = "==19.3b0"}
 
 [packages]
-
-[requires]
-python_version = "3.6"
