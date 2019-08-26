@@ -1,6 +1,7 @@
 # hfstol
 ![travis-badge](https://travis-ci.org/Madoshakalaka/hfstol.svg?branch=master)
 ![code-cov](https://codecov.io/gh/Madoshakalaka/hfstol/branch/master/graphs/badge.svg)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/hfstol.svg)](https://pypi.python.org/pypi/hfstol/)
 
 hfst-optimized-lookup in python
 

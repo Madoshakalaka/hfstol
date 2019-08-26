@@ -2,11 +2,8 @@ language: python
 dist: xenial
 install:
   - sudo apt-get install hfst
-  - pip install -e .
-  - pip install -r requirements.txt
-script:
-- mypy -p hfstol
-- py.test
+  - pipenv install --dev
+script: 'pytest --cov=hfstol'
 after_success: codecov
 stages:
 - test
@@ -17,8 +14,8 @@ jobs:
   - python: '3.6'
   - python: '3.5'
   - stage: deploy
-    install: ''
-    script: ''
+    install: 'pipenv install --dev pipenv-setup'
+    script: 'pipenv-setup sync'
     after_success: ''
     deploy:
       provider: pypi

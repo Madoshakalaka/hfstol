@@ -26,6 +26,8 @@ class HFSTOL:
         self._hfstol_exe_path = shutil.which("hfst-optimized-lookup")
         self._hfstol_file_path = hfstol_file_path
 
+        self._hfstol_processes = []
+
     def feed(
         self, surface_form: str, concat: bool = True
     ) -> Tuple[Tuple[str, ...], ...]:
@@ -91,6 +93,23 @@ class HFSTOL:
                 "See: https://github.com/hfst/hfst#installation"
             )
 
+        while len(self._hfstol_processes) < multi_process:
+            proc = subprocess.Popen(
+                args=[
+                    str(self._hfstol_exe_path),
+                    "--quiet",
+                    "--pipe-mode",
+                    str(self._hfstol_file_path),
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
+                encoding="utf-8",
+                bufsize=0,
+            )
+            self._hfstol_processes.append(proc)
+
         return self._call_hfstol(list(strings), multi_process)
 
     @classmethod
@@ -118,55 +137,46 @@ class HFSTOL:
         call hfstol and return concatenated results
         """
 
-        # hfst-optimized-lookup expects each analysis on a separate line:
-        # lines = "\n".join(inputs).encode("UTF-8")
         length = len(inputs)
-        lines_per_process = [
-            "\n".join(
-                inputs[length * i // multi_process : length * (i + 1) // multi_process]
-            ).encode("UTF-8")
+        words_per_process = [
+            inputs[length * i // multi_process : length * (i + 1) // multi_process]
             for i in range(multi_process)
-        ]
-
-        procs = [
-            subprocess.Popen(
-                args=[
-                    str(self._hfstol_exe_path),
-                    "--quiet",
-                    "--pipe-mode",
-                    str(self._hfstol_file_path),
-                ],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=False,
-            )
-            for _ in range(multi_process)
         ]
 
         message_queue = queue.Queue()  # type: queue.Queue
 
-        for i, proc in enumerate(procs):
+        def interact_with_process(
+            p: subprocess.Popen, mq: queue.Queue, words: List[str]
+        ):
+            received_count = 0
+            old_line = ""
+            m_lines = []  # type: List[str]
+            p.stdin.write("\n".join(words) + "\n")
+            p.stdin.flush()
+            while received_count < len(words):
+                line = p.stdout.readline().strip("\r\n")
+                if line:
+                    m_lines.append(line)
+                elif old_line:
+                    received_count += 1
+                old_line = line
+            mq.put(m_lines)
 
+        for i, proc in enumerate(self._hfstol_processes[:multi_process]):
             threading.Thread(
-                target=lambda p: message_queue.put(p.communicate(lines_per_process[i])),
-                args=(proc,),
+                target=interact_with_process,
+                args=(proc, message_queue, words_per_process[i]),
             ).start()
 
-        returned_process_count = 0
+        returned_thread_count = 0
 
         results = {original: set() for original in inputs}  # type: Dict[str, Set[str]]
 
-        while returned_process_count != len(lines_per_process):
-            outs, err = message_queue.get()
-            returned_process_count += 1
+        while returned_thread_count != multi_process:
+            msg_lines = message_queue.get()
+            returned_thread_count += 1
 
-            for line in outs.decode("UTF-8").splitlines():
-                # Remove extraneous whitespace.
-                line = line.strip()
-                # Skip empty lines.
-                if not line:
-                    continue
+            for line in msg_lines:
                 # Each line will be in this form:
                 #    <original_input>\t<res>
                 # e.g. in the case of analyzer file
@@ -180,8 +190,6 @@ class HFSTOL:
 
                 if "+?" not in rest and "+?" not in res:
                     results[original_input].add(res)
-
-            # yield tuple(res_buffer)
 
         return results
 

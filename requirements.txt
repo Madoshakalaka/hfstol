@@ -1,7 +1,0 @@
-# dev requirements
-
-pytest
-pytest-datadir
-pytest-cov
-codecov
-mypy
