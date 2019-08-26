@@ -3,7 +3,7 @@ dist: xenial
 install:
   - sudo apt-get install hfst
   - pipenv install --dev
-script: 'pytest --cov=hfstol hfstol'
+script: 'pytest --cov=hfstol'
 after_success: codecov
 stages:
 - test
