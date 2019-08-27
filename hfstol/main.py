@@ -106,7 +106,7 @@ class HFSTOL:
                 stderr=subprocess.PIPE,
                 shell=False,
                 universal_newlines=True,
-                bufsize=0,
+                bufsize=-1,
             )
             self._hfstol_processes.append(proc)
 
@@ -152,11 +152,16 @@ class HFSTOL:
         def interact_with_process(
             p: subprocess.Popen, mq: queue.Queue, words: List[str]
         ):
+            def _write_lines(stdin, lines):
+                for line in lines:
+                    stdin.write(line + "\n")
+                p.stdin.flush()
+
             received_count = 0
             old_line = ""
             m_lines = []  # type: List[str]
-            p.stdin.write("\n".join(words) + "\n")
-            p.stdin.flush()
+            threading.Thread(target=_write_lines, args=(p.stdin, words)).start()
+
             while received_count < len(words):
                 line = p.stdout.readline().strip("\r\n")
                 if line:
