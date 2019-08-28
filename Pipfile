@@ -12,6 +12,7 @@ pytest-mypy = "~=0.4"
 hfstol = {editable = true,path = "."}
 black = {markers = "python_version>='3.6'",version = "==19.3b0"}
 twine = "*"
+psutil = "*"
 
 [packages]
 
