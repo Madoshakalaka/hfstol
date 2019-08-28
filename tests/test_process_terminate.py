@@ -22,14 +22,18 @@ def test_process_decreases_after_del(shared_datadir: Path):
     # By calling analyze, we are forcing a new hfstol process to start!
     hfst.feed_in_bulk_fast(["êkwa"])
     processes_during = count_child_processes()
-    assert processes_during > processes_before, "expected at least one more process than before"
+    assert (
+        processes_during > processes_before
+    ), "expected at least one more process than before"
 
     # There should be no more references to the hfst... hopefully.
     del hfst
     # By removing this reference, hfst SHOULD have terminated all of its
     # processes; we should be back where we started.
     processes_after = count_child_processes()
-    assert processes_after == processes_before, "expected new processes to be terminated"
+    assert (
+        processes_after == processes_before
+    ), "expected new processes to be terminated"
 
 
 def count_child_processes() -> int:
@@ -44,7 +48,10 @@ def count_child_processes() -> int:
     # upon a call to wait(); however, the kernel marks such a process as a
     # "zombie", because it is effectively dead, but waiting to be released by
     # its parent :/
-    children = [child for child in  psutil.Process().children()
-                if child.status() != psutil.STATUS_ZOMBIE]
+    children = [
+        child
+        for child in psutil.Process().children()
+        if child.status() != psutil.STATUS_ZOMBIE
+    ]
     print(children)
     return len(children)

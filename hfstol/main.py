@@ -129,7 +129,6 @@ class HFSTOL:
 
         return self._call_hfstol(list(strings), multi_process)
 
-
     @classmethod
     def from_file(cls, filename: PathLike):
         """
