@@ -114,8 +114,11 @@ class HFSTOL:
 
     def __del__(self):
         for proc in self._hfstol_processes:
-            if proc:
+            try:
                 proc.terminate()
+            except AttributeError:
+                # when python shuts down. random stuff gets deleted so process.terminate is not guaranteed to work
+                pass
 
     @classmethod
     def from_file(cls, filename: PathLike):
