@@ -17,11 +17,14 @@ PathLike = Union[Path, str]  # python 3.5 compatibility
 
 
 class HFSTOL:
-    # Any hfst-optimized-loopup process that gets created is added to this
-    # weakset. If Python begins tearing down and process is still in
-    # referenced in memory, then it is automatically shut down by
+    # All HFSTOL objects that gets created are added to this
+    # weakset. If Python begins tearing down and an HFSTOL process is still in
+    # referenced in memory, then all its processes are automatically
+    # terminated, before the garbage collector gets involved.
     # _terminate_all_active_hfstol_processes().
-    ACTIVE_HFSTOL_PROCESSES = WeakSet()  # type: WeakSet
+    # Once an HFSTOL instance is no longer referenced any more, it is
+    # automagically~~ removed from this set!
+    ACTIVE_HFSTOL_INSTANCES = WeakSet()  # type: WeakSet
 
     def __init__(self, header, alphabet, transducer, hfstol_file_path):
         """
@@ -35,6 +38,12 @@ class HFSTOL:
         self._hfstol_file_path = hfstol_file_path
 
         self._hfstol_processes = []  # type: List[subprocess.Popen]
+
+        # Keep track of this object, so that if it hasn't been garbage
+        # collected by the time the Python process is shutting down, we
+        # can terminate all processes before Python starts deleting all the
+        # references we need to do so!
+        self.ACTIVE_HFSTOL_INSTANCES.add(self)
 
     def feed(
         self, surface_form: str, concat: bool = True
@@ -116,9 +125,6 @@ class HFSTOL:
                 universal_newlines=True,
                 bufsize=-1,
             )
-            # Add it to the global set of processes so that we can ensure it's
-            # terminated later!
-            self.ACTIVE_HFSTOL_PROCESSES.add(proc)
             self._hfstol_processes.append(proc)
 
         return self._call_hfstol(list(strings), multi_process)
@@ -210,6 +216,18 @@ class HFSTOL:
 
         return results
 
+    def __del__(self):
+        self._terminate_all_processes()
+
+    def _terminate_all_processes(self):
+        """
+        Terminates all active hfst-optimized-lookup processes created by this
+        instance.
+        """
+        while self._hfstol_processes:
+            proc = self._hfstol_processes.pop()
+            proc.terminate()
+
     @staticmethod
     @atexit.register
     def _terminate_all_active_hfstol_processes():
@@ -217,8 +235,8 @@ class HFSTOL:
         Terminates any hfst-optimized-lookup process that have not yet been
         garbage collected.
         """
-        for proc in HFSTOL.ACTIVE_HFSTOL_PROCESSES:
-            proc.terminate()
+        for instance in HFSTOL.ACTIVE_HFSTOL_INSTANCES:
+            instance._terminate_all_processes()
 
 
 def cmd():
