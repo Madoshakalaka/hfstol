@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+import gc
 from pathlib import Path
 
 import psutil  # type: ignore
@@ -15,6 +16,7 @@ def test_process_decreases_after_del(shared_datadir: Path):
 
     This test is not valid when using multi-threading!
     """
+
     processes_before = count_child_processes()
     hfst = HFSTOL.from_file(shared_datadir / "crk-descriptive-analyzer.hfstol")
     # By calling analyze, we are forcing a new hfstol process to start!
@@ -31,4 +33,18 @@ def test_process_decreases_after_del(shared_datadir: Path):
 
 
 def count_child_processes() -> int:
-    return len(psutil.Process().children())
+    """
+    Counts all "active" child processes.
+    """
+    # Count all children, as long as they're not zombies.
+    # What are zombie processes? They're any process that has terminated,
+    # yet, they have no been wait()'d by the parent process. Before the parent
+    # calls wait() on a child process, its return status and other metadata
+    # still have to be stored by the kernel so that the kernel can return it
+    # upon a call to wait(); however, the kernel marks such a process as a
+    # "zombie", because it is effectively dead, but waiting to be released by
+    # its parent :/
+    children = [child for child in  psutil.Process().children()
+                if child.status() != psutil.STATUS_ZOMBIE]
+    print(children)
+    return len(children)
