@@ -11,5 +11,10 @@ codecov = "~=2.0"
 pytest-mypy = "~=0.4"
 hfstol = {editable = true,path = "."}
 black = {markers = "python_version>='3.6'",version = "==19.3b0"}
+twine = "*"
 
 [packages]
+
+[scripts]
+build = 'python setup.py sdist'
+release = 'python -m twine upload dist/*'

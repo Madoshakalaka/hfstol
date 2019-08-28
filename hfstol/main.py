@@ -114,7 +114,8 @@ class HFSTOL:
 
     def __del__(self):
         for proc in self._hfstol_processes:
-            proc.terminate()
+            if proc:
+                proc.terminate()
 
     @classmethod
     def from_file(cls, filename: PathLike):
