@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import atexit
 import queue
 import shutil
 import subprocess
@@ -7,6 +8,7 @@ import sys
 import threading
 from pathlib import Path
 from typing import List, Iterable, Dict, Set, Tuple, Union
+from weakref import WeakSet
 
 from hfstol.shared import Header, Alphabet
 from hfstol.transducer import Transducer
@@ -15,6 +17,15 @@ PathLike = Union[Path, str]  # python 3.5 compatibility
 
 
 class HFSTOL:
+    # All HFSTOL objects that gets created are added to this
+    # weakset. If Python begins tearing down and an HFSTOL process is still in
+    # referenced in memory, then all its processes are automatically
+    # terminated, before the garbage collector gets involved.
+    # _terminate_all_active_hfstol_processes().
+    # Once an HFSTOL instance is no longer referenced any more, it is
+    # automagically~~ removed from this set!
+    ACTIVE_HFSTOL_INSTANCES = WeakSet()  # type: WeakSet
+
     def __init__(self, header, alphabet, transducer, hfstol_file_path):
         """
         Read a transducer from filename
@@ -27,6 +38,12 @@ class HFSTOL:
         self._hfstol_file_path = hfstol_file_path
 
         self._hfstol_processes = []  # type: List[subprocess.Popen]
+
+        # Keep track of this object, so that if it hasn't been garbage
+        # collected by the time the Python process is shutting down, we
+        # can terminate all processes before Python starts deleting all the
+        # references we need to do so!
+        self.ACTIVE_HFSTOL_INSTANCES.add(self)
 
     def feed(
         self, surface_form: str, concat: bool = True
@@ -112,13 +129,6 @@ class HFSTOL:
 
         return self._call_hfstol(list(strings), multi_process)
 
-    def __del__(self):
-        for proc in self._hfstol_processes:
-            try:
-                proc.terminate()
-            except AttributeError:
-                # when python shuts down. random stuff gets deleted so process.terminate is not guaranteed to work
-                pass
 
     @classmethod
     def from_file(cls, filename: PathLike):
@@ -205,6 +215,28 @@ class HFSTOL:
                     results[original_input].add(res)
 
         return results
+
+    def __del__(self):
+        self._terminate_all_processes()
+
+    def _terminate_all_processes(self):
+        """
+        Terminates all active hfst-optimized-lookup processes created by this
+        instance.
+        """
+        while self._hfstol_processes:
+            proc = self._hfstol_processes.pop()
+            proc.terminate()
+
+    @staticmethod
+    @atexit.register
+    def _terminate_all_active_hfstol_processes():
+        """
+        Terminates any hfst-optimized-lookup process that have not yet been
+        garbage collected.
+        """
+        for instance in HFSTOL.ACTIVE_HFSTOL_INSTANCES:
+            instance._terminate_all_processes()
 
 
 def cmd():
