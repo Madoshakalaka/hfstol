@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import atexit
 import queue
 import shutil
 import subprocess
@@ -7,6 +8,7 @@ import sys
 import threading
 from pathlib import Path
 from typing import List, Iterable, Dict, Set, Tuple, Union
+from weakref import WeakSet
 
 from hfstol.shared import Header, Alphabet
 from hfstol.transducer import Transducer
@@ -15,6 +17,12 @@ PathLike = Union[Path, str]  # python 3.5 compatibility
 
 
 class HFSTOL:
+    # Any hfst-optimized-loopup process that gets created is added to this
+    # weakset. If Python begins tearing down and process is still in
+    # referenced in memory, then it is automatically shut down by
+    # _terminate_all_active_hfstol_processes().
+    ACTIVE_HFSTOL_PROCESSES = WeakSet()  # type: WeakSet
+
     def __init__(self, header, alphabet, transducer, hfstol_file_path):
         """
         Read a transducer from filename
@@ -108,17 +116,13 @@ class HFSTOL:
                 universal_newlines=True,
                 bufsize=-1,
             )
+            # Add it to the global set of processes so that we can ensure it's
+            # terminated later!
+            self.ACTIVE_HFSTOL_PROCESSES.add(proc)
             self._hfstol_processes.append(proc)
 
         return self._call_hfstol(list(strings), multi_process)
 
-    def __del__(self):
-        for proc in self._hfstol_processes:
-            try:
-                proc.terminate()
-            except AttributeError:
-                # when python shuts down. random stuff gets deleted so process.terminate is not guaranteed to work
-                pass
 
     @classmethod
     def from_file(cls, filename: PathLike):
@@ -205,6 +209,16 @@ class HFSTOL:
                     results[original_input].add(res)
 
         return results
+
+    @staticmethod
+    @atexit.register
+    def _terminate_all_active_hfstol_processes():
+        """
+        Terminates any hfst-optimized-lookup process that have not yet been
+        garbage collected.
+        """
+        for proc in HFSTOL.ACTIVE_HFSTOL_PROCESSES:
+            proc.terminate()
 
 
 def cmd():
