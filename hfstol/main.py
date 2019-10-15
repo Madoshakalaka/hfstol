@@ -161,6 +161,7 @@ class HFSTOL:
         ]
 
         message_queue = queue.Queue()  # type: queue.Queue
+        barrier = threading.Barrier(multi_process)
 
         def interact_with_process(
             p: subprocess.Popen, mq: queue.Queue, words: List[str]
@@ -178,11 +179,11 @@ class HFSTOL:
             while received_count < len(words):
                 line = p.stdout.readline().strip("\r\n")
                 if line:
-                    m_lines.append(line)
+                    mq.put(line)
                 elif old_line:
                     received_count += 1
                 old_line = line
-            mq.put(m_lines)
+            barrier.wait()
 
         for i, proc in enumerate(self._hfstol_processes[:multi_process]):
             threading.Thread(
@@ -190,28 +191,24 @@ class HFSTOL:
                 args=(proc, message_queue, words_per_process[i]),
             ).start()
 
-        returned_thread_count = 0
-
         results = {original: set() for original in inputs}  # type: Dict[str, Set[str]]
 
-        while returned_thread_count != multi_process or not message_queue.empty():
-            msg_lines = message_queue.get()
-            returned_thread_count += 1
+        while barrier.n_waiting != multi_process or not message_queue.empty():
+            line = message_queue.get()
 
-            for line in msg_lines:
-                # Each line will be in this form:
-                #    <original_input>\t<res>
-                # e.g. in the case of analyzer file
-                # nôhkominân    nôhkom+N+A+D+Px1Pl+Sg
-                # e.g. in the case of generator file
-                # nôhkom+N+A+D+Px1Pl+Sg     nôhkominân
-                # If the hfstol can't compute, the transduction will have +?:
-                # e.g.,
-                #   sadijfijfe	sadijfijfe	+?
-                original_input, res, *rest = line.split("\t")
+            # Each line will be in this form:
+            #    <original_input>\t<res>
+            # e.g. in the case of analyzer file
+            # nôhkominân    nôhkom+N+A+D+Px1Pl+Sg
+            # e.g. in the case of generator file
+            # nôhkom+N+A+D+Px1Pl+Sg     nôhkominân
+            # If the hfstol can't compute, the transduction will have +?:
+            # e.g.,
+            #   sadijfijfe	sadijfijfe	+?
+            original_input, res, *rest = line.split("\t")
 
-                if "+?" not in rest and "+?" not in res:
-                    results[original_input].add(res)
+            if "+?" not in rest and "+?" not in res:
+                results[original_input].add(res)
 
         return results
 
