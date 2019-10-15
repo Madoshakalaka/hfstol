@@ -1,3 +1,4 @@
+# noinspection Mypy
 import pytest
 
 # in older version, stdin.write hangs for this large quatity of words

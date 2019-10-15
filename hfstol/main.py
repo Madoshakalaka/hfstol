@@ -195,7 +195,7 @@ class HFSTOL:
         results = {original: set() for original in inputs}  # type: Dict[str, Set[str]]
 
         while returned_thread_count != multi_process:
-            msg_lines = message_queue.get()
+            msg_lines = message_queue.get(block=True)
             returned_thread_count += 1
 
             for line in msg_lines:
