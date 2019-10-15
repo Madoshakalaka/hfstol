@@ -30,7 +30,7 @@ hfst.feed_in_bulk(['niska', 'kinipânânaw'])
 # returns: 
 # {'niska': {('niska', '+N', '+A', '+Obv'), ('niska', '+N', '+A', '+Sg')}, 'kinipânânaw': {('nipâw', '+V', '+AI', '+Ind', '+Prs', '+12Pl')}}
 
-hfst.feed_in_bulk_fast(['niska', 'kinipânânaw'])
+hfst.feed_in_bulk_fast(['niska', 'kinipânânaw'], multi_process=4)
 # returns:
 # {'niska': {'niska+N+A+Obv', 'niska+N+A+Sg'}, 'kinipânânaw': {'nipâw+V+AI+Ind+Prs+12Pl'}}
 
