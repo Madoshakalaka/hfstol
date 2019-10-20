@@ -2,7 +2,7 @@ language: python
 dist: xenial
 install:
   - sudo apt-get install hfst
-  - pipenv install --dev
+  - pipenv install --dev --skip-lock
 script: 'pytest --cov=hfstol'
 after_success: codecov
 stages:

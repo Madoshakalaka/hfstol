@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f70cabf793ca5d452bd00f6726cd0639ba351c73cdf212482fc237e3848fc138"
+            "sha256": "33721cf8575d876337e970aaabec8f8a666c4a0269a7e1f74973826de6dfe316"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -80,6 +80,13 @@
             ],
             "index": "pypi",
             "version": "==2.0.15"
+        },
+        "colorama": {
+            "hashes": [
+                "sha256:05eed71e2e327246ad6b38c540c4a3117230b19679b875190486ddd2d721422d",
+                "sha256:f8ac84de7840f5b9c4e3347b3c1eaa50f7e49c2b07596221daec5edaabbd7c48"
+            ],
+            "version": "==0.4.1"
         },
         "coverage": {
             "hashes": [
@@ -185,6 +192,19 @@
                 "sha256:d9551545c6d761f3def1677baf08ab2a3ca17c56879e70fecba2fc4dde4ed108"
             ],
             "version": "==19.2"
+        },
+        "pipenv-setup": {
+            "hashes": [
+                "sha256:22e5946f4a8adc8212b680aa2332d62803922853a3f35cf29618d25b380d5b83"
+            ],
+            "index": "pypi",
+            "version": "==2.1.7"
+        },
+        "pipfile": {
+            "hashes": [
+                "sha256:f7d9f15de8b660986557eb3cc5391aa1a16207ac41bc378d03f414762d36c984"
+            ],
+            "version": "==0.0.2"
         },
         "pkginfo": {
             "hashes": [
@@ -316,6 +336,7 @@
                 "sha256:9fe7091715c7576df166df8ef6654e61bada39571783f2fd415bdcba867c6993"
             ],
             "index": "pypi",
+            "markers": "python_version >= '3.6'",
             "version": "==2.0.0"
         },
         "typed-ast": {
