@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import List, Iterable, Dict, Set, Tuple, Union
 from weakref import WeakSet
@@ -172,12 +173,17 @@ class HFSTOL:
 
             received_count = 0
             old_line = ""
-            m_lines = []  # type: List[str]
             threading.Thread(target=_write_lines, args=(p.stdin, words)).start()
 
             while received_count < len(words):
-                line = p.stdout.readline().strip("\r\n")
-                if line:
+                chars = p.stdout.readline()
+                if chars != '':
+                    line = chars.rstrip()
+                else:
+                    time.sleep(0.01)
+                    continue
+
+                if line != '':
                     mq.put(line)
                 elif old_line:
                     received_count += 1
