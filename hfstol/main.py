@@ -161,7 +161,6 @@ class HFSTOL:
         ]
 
         message_queue = queue.Queue()  # type: queue.Queue
-        barrier = threading.Barrier(multi_process)
 
         def interact_with_process(
             p: subprocess.Popen, mq: queue.Queue, words: List[str]
@@ -183,7 +182,7 @@ class HFSTOL:
                 elif old_line:
                     received_count += 1
                 old_line = line
-            barrier.wait()
+            mq.put(None)
 
         for i, proc in enumerate(self._hfstol_processes[:multi_process]):
             threading.Thread(
@@ -193,9 +192,13 @@ class HFSTOL:
 
         results = {original: set() for original in inputs}  # type: Dict[str, Set[str]]
 
-        while barrier.n_waiting != multi_process or not message_queue.empty():
-            line = message_queue.get()
+        ended_count = 0
 
+        while ended_count != multi_process:
+            line = message_queue.get()
+            if line is None:
+                ended_count += 1
+                continue
             # Each line will be in this form:
             #    <original_input>\t<res>
             # e.g. in the case of analyzer file
