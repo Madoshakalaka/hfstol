@@ -55,15 +55,15 @@ class HFSTOL:
         :param surface_form: the surface form
         :param concat: whether to concatenate single characters
 
-            example output for `surface_form` = 'niskak', with `crk-descriptive-analyzer.hfstol`
+        example output for `surface_form` = 'niskak', with `crk-descriptive-analyzer.hfstol`
             - True: (('niska', '+N', '+A', '+Pl'), ('nîskâw', '+V', '+II', '+II', '+Cnj', '+Prs', '+3Sg'))
             - False: (('n', 'i', 's', 'k', 'a', '+N', '+A', '+Pl'), ('n', 'î', 's', 'k', 'â', 'w', '+V', '+II', '+II', '+Cnj', '+Prs', '+3Sg'))
 
-            example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol`
+        example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol`
             - True: (('niskak',),)
             - False: (('n', 'i', 's', 'k', 'a', 'k'),)
 
-            example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol` (an inflection that has two spellings)
+        example output for `surface_form` = 'niska+N+A+Pl' with `crk-normative-generator.hfstol` (an inflection that has two spellings)
             - True: (('kinipânaw',), ('kinipânânaw',))
             -False: (('k', 'i', 'n', 'i', 'p', 'â', 'n', 'a', 'w'), ('k', 'i', 'n', 'i', 'p', 'â', 'n', 'â', 'n', 'a', 'w'))
         """
@@ -173,28 +173,33 @@ class HFSTOL:
 
             received_count = 0
             old_line = ""
-            threading.Thread(target=_write_lines, args=(p.stdin, words)).start()
+            t = threading.Thread(target=_write_lines, args=(p.stdin, words))
+            t.start()
 
             while received_count < len(words):
                 chars = p.stdout.readline()
-                if chars != '':
+                if chars != "":
                     line = chars.rstrip()
                 else:
                     time.sleep(0.01)
                     continue
 
-                if line != '':
+                if line != "":
                     mq.put(line)
                 elif old_line:
                     received_count += 1
                 old_line = line
             mq.put(None)
+            t.join()
 
+        stream_transfer_threads = []
         for i, proc in enumerate(self._hfstol_processes[:multi_process]):
-            threading.Thread(
+            stream_transfer_thread = threading.Thread(
                 target=interact_with_process,
                 args=(proc, message_queue, words_per_process[i]),
-            ).start()
+            )
+            stream_transfer_thread.start()
+            stream_transfer_threads.append(stream_transfer_thread)
 
         results = {original: set() for original in inputs}  # type: Dict[str, Set[str]]
 
@@ -218,7 +223,8 @@ class HFSTOL:
 
             if "+?" not in rest and "+?" not in res:
                 results[original_input].add(res)
-
+        for t in stream_transfer_threads:
+            t.join()
         return results
 
     def __del__(self):
